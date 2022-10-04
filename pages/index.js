@@ -1,23 +1,28 @@
 import Opal from "../opal";
+import downloadPreimage from "../opal/downloadPreimage";
 
 export default function Home() {
   const opal = new Opal();
 
-  const handleConnect = async () => {
-    const connected = await opal.connectWallet();
-    console.log(connected);
-  };
-
   const handleDeposit = async () => {
-    const hash = "0xb10e2d527612073b26eecdfd717e6a320cf44b4afac2b0732d9fcbe2b7fa0cf6";
+    if (!(await opal.isConnected())) {
+      const connected = await opal.connectWallet();
+      if (!connected) return console.error("Failed to connect to wallet");
+    }
+    const preimage = opal.preimage();
+    const hash = opal.hash(preimage);
     const wei = "1000000000000000000";
-    const txHash = await opal.deposit(hash, wei);
-    console.log(txHash);
+    downloadPreimage(`opal-${new Date()}.txt`, preimage);
+    try {
+      const txHash = await opal.deposit(hash, wei);
+      console.log(txHash);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <div>
-      <button onClick={() => handleConnect()}>Connect</button>
       <button onClick={() => handleDeposit()}>Deposit</button>
     </div>
   );

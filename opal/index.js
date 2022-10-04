@@ -37,29 +37,55 @@ class Opal {
   }
 
   /**
-   * @param {string} amount - amount to deposit in wei
-   * @returns {string} transaction hash
-   * @description Deposits the specified amount of ROSE into the Opal contract
-   * @example deposit("1000000000000000000")
+   * @description Checks if the user is connected to wallet
    **/
-  async deposit(_hash, _wei) {
-    await this.#isConnected();
-    if (isNaN(_wei)) return console.error("Deposit failed. Invalid amount");
-    // call deposit function
-    const data = await this.contract["deposit"](_hash, { value: _wei });
-    console.log(data);
-
-    // return receipt.hash;
+  async isConnected() {
+    return this.contract ? true : false;
   }
 
   /**
-   * @description Checks if the user is connected to wallet
+   * @param {string} _hash - hash of the preimage to lock ROSE
+   * @returns {string} _wei - amount of wei to deposit
+   * @description Deposits the specified amount of ROSE into the Opal contract
    **/
-  async #isConnected() {
-    if (!this.provider) {
-      const connected = await this.connectWallet();
-      if (!connected) return console.error("Deposit failed. Wallet not connected");
-    }
+  async deposit(_hash, _wei) {
+    if (isNaN(_wei)) return console.error("Deposit failed. Invalid amount");
+    // call deposit function
+    const receipt = await this.contract["deposit"](_hash, { value: _wei });
+    return receipt.hash;
+  }
+
+  /**
+   * @param {string} _preimage - preimage of the hash to unlock withdraw
+   * @returns {string} _to - address to withdraw to
+   * @description Withdraws amount of ROSE from the Opal contract
+   **/
+  async withdraw(_preimage, _to) {
+    if (isNaN(_preimage)) return console.error("Deposit failed. Invalid preimage");
+    if (!ethers.utils.isAddress(_to)) return console.error("Withdraw failed. Invalid address");
+    // call withdraw function
+    const receipt = await this.contract["withdraw"](_preimage, _to);
+    return receipt.hash;
+  }
+
+  /**
+   * @returns {string} generates and returns a random uint256 preimage
+   **/
+  preimage() {
+    const bytes32 = ethers.utils.randomBytes(32);
+    return ethers.BigNumber.from(bytes32).toString();
+  }
+
+  /**
+   *
+   * @param {string} _preimage - uint256
+   * @returns hash of preimage
+   * @description return keccak256(abi.encodePacked(_preimage));
+   */
+  hash(_preimage) {
+    if (isNaN(_preimage)) return console.error("Hash failed. Invalid preimage");
+    // hash the preimage
+    return ethers.utils.solidityKeccak256(["uint256"], [_preimage]);
   }
 }
 
